@@ -44,8 +44,8 @@ elif QtType == 'PyQt':
 ''' Variables '''
 print 'This app is now using ' + QtType
 uiFile = os.path.join(os.path.dirname(__file__), "mainWindow.ui")
-windowTitle = 'Media Viewer'
-windowObject = 'mediaViewer'
+windowTitle = 'pyVFX Viewer'
+windowObject = 'pyVFXViewer'
 
 
 
