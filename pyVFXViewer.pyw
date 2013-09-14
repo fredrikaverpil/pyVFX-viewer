@@ -32,7 +32,7 @@ if QtType == 'PySide':
 	from PySide import QtCore, QtGui, QtUiTools
 	if (runMode == 'nuke'):
 		print 'Make sure to have pysideuic somewhere in your PYTHONPATH'
-		#sys.append.path('//10.0.0.1/share/path/to/pysideuic')
+		#sys.append.path('//10.0.0.1/share/path/to/site-packages')
 	import pysideuic	
 elif QtType == 'PyQt':
 	from PyQt4 import QtCore, QtGui, uic
@@ -427,26 +427,20 @@ class ThreadLoadImage(QtCore.QThread):
 		proxyFilepath = os.path.join(gui.cacheDir, proxyFilename)
 
 		# Get "last modified" date of original full-res imagery
-		(mode, ino, dev, nlink, uid, gid, size, atime, mtime, ctime) = os.stat( self.imageFilepath )
-		#print "fullres last modified: %s" % time.ctime(mtime)
-		atimeFullres = atime
-		mtimeFullres = mtime
-
+		(modeFullres, inoFullres, devFullres, nlinkFullres, uidFullres, gidFullres, sizeFullres, atimeFullres, mtimeFullres, ctimeFullres) = os.stat( self.imageFilepath )
+		#print "fullres last modified: %s" % time.ctime(mtimeProxy)
 
 
 		# Get "last modified" date of proxy image
 		if os.path.exists( proxyFilepath ):
-			(mode, ino, dev, nlink, uid, gid, size, atime, mtime, ctime) = os.stat( proxyFilepath )
-			#print "proxy last modified: %s" % time.ctime(mtime)
-			atimeProxy = atime
-			mtimeProxy = mtime
+			(modeProxy, inoProxy, devProxy, nlinkProxy, uidProxy, gidProxy, sizeProxy, atimeProxy, mtimeProxy, ctimeProxy) = os.stat( proxyFilepath )
+			#print "proxy last modified: %s" % time.ctime(mtimeProxy)
 		else:
 			atimeProxy = None
 			mtimeProxy = None
 
 
-
-		if os.path.exists( proxyFilepath ) and (mtimeFullres == mtimeProxy):
+		if os.path.exists( proxyFilepath ) and (mtimeProxy >= mtimeFullres):
 			# Cache exists, contains same "last modified date" as fullres -- so load that instead
 			self.placeholder.image.load( proxyFilepath )
 			self.placeholder.scaledImage = self.placeholder.image.scaledToHeight(200, QtCore.Qt.SmoothTransformation)	
@@ -464,13 +458,8 @@ class ThreadLoadImage(QtCore.QThread):
 			jpegWriter.write(self.placeholder.scaledImage)
 
 			# Make proxy carry the same "last modified" date as the fullres imagery
-			os.utime( proxyFilepath, (atime, mtime) )
-		
+			os.utime( proxyFilepath, (atimeFullres, mtimeFullres) )
 
-		
-
-		
-		
 
 		self.emit( QtCore.SIGNAL('update(QString)'), "image loaded" )
 		return
