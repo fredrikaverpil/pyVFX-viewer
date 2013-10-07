@@ -31,14 +31,20 @@ QtType = 'PySide'	# Edit this to switch between PySide and PyQt
 if QtType == 'PySide':
 	from PySide import QtCore, QtGui, QtUiTools
 	if (runMode == 'nuke'):
-		print 'Make sure to have pysideuic somewhere in your PYTHONPATH'
-		#sys.append.path('//10.0.0.1/share/path/to/site-packages')
-	import pysideuic	
+		if 'win' in sys.platform:
+			sys.path.append(r'C:/Python26/Lib/site-packages')					# Edit this to point to the path containing the pysideuic module on Windows
+		elif 'linux' in sys.platform:
+			sys.path.append(r'/usr/lib/python2.6/dist-packages')				# Edit this to point to the path containing the pysideuic module on Linux
+		elif 'darwin' in sys.platform:
+			sys.path.append(r'/Library/Python/2.6/site-packages/')				# Edit this to point to the path containing the pysideuic module on OS X
+	import pysideuic		
 elif QtType == 'PyQt':
 	from PyQt4 import QtCore, QtGui, uic
 	import sip
 
 
+''' Inits '''
+sys.dont_write_bytecode = True
 
 
 ''' Variables '''
@@ -130,6 +136,17 @@ def runStandalone():
 	global gui
 	gui = MediaViewer()
 	gui.show()
+
+	darkorange = True							# Edit this to set the darkorange stylesheet
+	if darkorange:
+		themePath = os.path.join( os.path.dirname(__file__), 'theme' )
+		sys.path.append( themePath )
+		import darkorangeResource
+		stylesheetFilepath = os.path.join( themePath, 'darkorange.stylesheet' )
+		with open( stylesheetFilepath , 'r' ) as shfp:
+			gui.setStyleSheet( shfp.read() )
+		app.setStyle("plastique")
+
 	sys.exit(app.exec_())
 
 def runMaya():
@@ -137,15 +154,31 @@ def runMaya():
 		cmds.deleteUI(windowObject)
 	global gui
 	gui = MediaViewer( maya_main_window() )
-	gui.show()
+
+	dockedWindow = False						# Edit this to change between docked window and free floating window
+	if dockedWindow:
+		allowedAreas = ['right', 'left']
+		cmds.dockControl( label=windowTitle, area='left', content=windowObject, allowedArea=allowedAreas )
+	else:
+		gui.show() 
 
 def runNuke():
-	# BIG PROBLEM NEEDS FIXING: global gui object not created for Nuke, breaks progress bar
-	#pane = nuke.getPaneFor('Properties.1')
-	#panels.registerWidgetAsPanel('mediaViewer', 'Media Viewer', 'uk.co.thefoundry.NukeTestWindow', True).addToPane(pane) # View pane and add it to panes menu
-	global gui
-	gui = MediaViewer()
-	gui.show
+	moduleName = __name__
+	if moduleName == '__main__':
+		moduleName = ''
+	else:
+		moduleName = moduleName + '.'
+
+	dockedWindow = False						# Edit this to change between docked window and free floating window (DOES NOT WORK PROPERLY AT THE MOMENT)
+	if dockedWindow:
+		pane = nuke.getPaneFor('Properties.1')
+		panel = panels.registerWidgetAsPanel( moduleName + 'MediaViewer' , windowTitle, ('uk.co.thefoundry.'+windowObject+'Window'), True).addToPane(pane) # View pane and add it to panes menu
+		global gui
+		gui = panel.customKnob.getObject().widget
+	else:
+		global gui
+		gui = MediaViewer()
+		gui.show()
 
 
 
@@ -173,7 +206,7 @@ class MediaViewer(form, base):
 		if not os.path.exists(self.cacheDir):
 			os.makedirs(self.cacheDir)
 		self.scanDir = ''
-		self.currentDir = '/Volumes/1TBDrive/Users/fredrik/Pictures/2013'		# dev
+		self.currentDir = 'C:/'
 		if not os.path.isdir(self.currentDir):
 			self.currentDir = os.path.dirname(__file__)
 		self.cacheDir = os.path.join( os.path.dirname(__file__), 'cache')
@@ -743,7 +776,9 @@ class FlowLayout(QtGui.QLayout):
 
 if runMode == 'standalone':
 	runStandalone()
+'''
 elif runMode == 'maya':
 	runMaya()
 elif runMode == 'nuke':
 	runNuke()
+'''
