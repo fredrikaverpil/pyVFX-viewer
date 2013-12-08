@@ -18,10 +18,9 @@ except:
 
 ''' Imports regardless of Qt type '''
 ''' ------------------------------ '''
-import os, sys, time
+import os, sys, time, subprocess
 import xml.etree.ElementTree as xml
 from cStringIO import StringIO
-
 
 
 
@@ -374,10 +373,11 @@ class MediaViewer(form, base):
 
 	def listDirs(self):
 		self.listWidgetDirs.clear()
+		print self.currentDir
 		dirs = os.walk( self.currentDir ).next()[1]
-		for dir in dirs:
+		for directory in dirs:
 			#dirUnicode = u'' + dir + ''
-			self.listWidgetDirs.addItem( dir )
+			self.listWidgetDirs.addItem( directory )
 
 
 		
@@ -569,9 +569,9 @@ class Placeholder(QtGui.QWidget):
 		super(Placeholder, self).__init__(parent)
 		
 
+		self.imageFilepath = imageFilepath
 		self.layout = QtGui.QVBoxLayout(self)
-		
-
+	
 		# Create place holder
 		self.image = QtGui.QImage(200, 200, QtGui.QImage.Format_ARGB32)
 		self.image.fill(QtGui.qRgb(255,0,0))
@@ -586,8 +586,35 @@ class Placeholder(QtGui.QWidget):
 		self.layout.addWidget( self.imageLabel )
 		self.layout.addWidget( self.textLabel )
 
+		# Add right-click menu
+		self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+		self.customContextMenuRequested.connect(self.selfRightClick) 
+
+	def selfRightClick(self, pos):
+			menu = QtGui.QMenu()
+			menu.addAction('Reveal ' + self.textLabel.text() + ' on disk', lambda : self.openContainingFolder( self.imageFilepath ) )
+			#menu.addAction('Open containing folder of ' + self.textLabel.text(), lambda : self.printer( 'open ' + self.imageFilepath ) )
+			menu.addSeparator()
+			menu.exec_(self.mapToGlobal(pos))
+	def mousePressEvent(self, event):
+			if event.type() in (QtCore.QEvent.MouseButtonPress, QtCore.QEvent.MouseButtonDblClick):
+					if event.button() == QtCore.Qt.LeftButton:
+							pass
+							#self.printer( 'Load hires image into pane: ' + self.textLabel.text() )
+			#self.connect(self.textLabel, QtCore.SIGNAL('clicked()'), self.click(self.textLabel.text()) )
+	def printer(self, item):
+			print item
+
+	def openContainingFolder(self, imageFilepath):
+		# Open folder with file selected
+		if 'darwin' in sys.platform:
+			subprocess.call(['open', '-R', imageFilepath])
+		elif 'win' in sys.platform:
+			subprocess.call(['open', '/select,' + imageFilepath])
+		elif 'linux' in sys.platform:
+			subprocess.call(['xdg-open', os.path.dirname(imageFilepath)])
 		
-		
+	
 
 
 class Tab(QtGui.QWidget):
